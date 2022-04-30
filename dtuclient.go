@@ -7,7 +7,6 @@ package modbus
 import (
 	"fmt"
 	"io"
-	"log"
 	"net"
 	"sync"
 	"time"
@@ -106,12 +105,16 @@ func (mb *dtuPackager) Decode(adu []byte) (pdu *ProtocolDataUnit, err error) {
 	return
 }
 
+type logger interface {
+	Printf(format string, v ...interface{})
+}
+
 // dtuTransporter implements Transporter interface.
 type dtuTransporter struct {
 	// Connect & Read timeout
 	Timeout time.Duration
 	// Transmission logger
-	Logger *log.Logger
+	Logger logger
 
 	BaudRate int
 

@@ -5,7 +5,10 @@
 package test
 
 import (
+	"encoding/binary"
 	"log"
+	"math"
+	"math/rand"
 	"os"
 	"testing"
 	"time"
@@ -16,6 +19,38 @@ import (
 const (
 	tcpDevice = "localhost:5020"
 )
+
+func TestLocal(t *testing.T) {
+	handler := modbus.NewTCPClientHandler("localhost:502")
+	handler.Timeout = 10 * time.Second
+
+	handler.SlaveId = 1
+
+	var c = 1
+	client := modbus.NewClient(handler)
+	for {
+		c++
+		var err error
+		rand.NewSource(time.Now().UnixNano())
+		var v = rand.Float32() * 100
+		var v2 = uint16(rand.Int())
+		handler.SlaveId = byte(c%2 + 1)
+
+		bb := make([]byte, 4)
+		binary.BigEndian.PutUint32(bb, math.Float32bits(v))
+
+		_, err = client.WriteSingleRegister(10, v2)
+		t.Logf("Write Slave %d uint16 value: %d", handler.SlaveId, v2)
+
+		_, err = client.WriteMultipleRegisters(0, 2, bb)
+		if err == nil {
+			t.Logf("Write Slave %d value: %.03f", handler.SlaveId, v)
+		} else {
+			t.Fatalf("write value error: %v", err)
+		}
+		time.Sleep(time.Second * 5)
+	}
+}
 
 func TestTCPClient(t *testing.T) {
 	client := modbus.TCPClient(tcpDevice)
